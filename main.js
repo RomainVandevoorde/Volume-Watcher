@@ -140,8 +140,7 @@ function addData(data, array) {
 	// On ne veut évidemment pas stocker ces données dans le tableau
 	if(!isFinite(data)) return array;
 
-	// Si il y a moins de 40 éléments, push simple
-	// Si il y a plus 40 élements, on enlève le premier avant d'ajouter notre nouvelle donnée
+	// Permet de conserver un nombre limité de données
 	if(array.length < 80) {
 		array.push(data);
 		return array;
@@ -169,13 +168,29 @@ function arrAvg(array) {
 	return total/nb;
 }
 
+function setMin(val, time) {
+	minData = val;
+	localData.setItem('minData', val);
+	minTime = time;
+}
+
+function setMax(val, time) {
+	maxData = val;
+	localData.setItem('maxData', val);
+	maxTime = time;
+}
+
+
 then = 0; // Init variable de calcul du temps passsé entre deux frames
 volData = []; // Store volume data
 
 localData = window.localStorage;
 
-minData = (localData.getItem('minData')) ? localData.getItem('minData') : null;
-maxData = (localData.getItem('maxData')) ? localData.getItem('maxData') : null;
+minData = (localData.getItem('minData')) ? parseFloat(localData.getItem('minData')) : null;
+maxData = (localData.getItem('maxData')) ? parseFloat(localData.getItem('maxData')) : null;
+
+minTime = 0;
+maxTime = 0;
 
 function myLoop(time) {
 
@@ -201,11 +216,23 @@ function myLoop(time) {
 			if(curAvg < minData || minData === null) {
 				minData = curAvg;
 				localData.setItem('minData', curAvg);
+				minTime = time;
 			}
 			if(curAvg > maxData || maxData === null) {
 				maxData = curAvg;
 				localData.setItem('maxData', curAvg);
+				maxTime = time;
 			}
+		}
+
+		if (time-minTime > 120000) {
+			minData += (maxData-minData)/50;
+			minTime = time;
+		}
+		if (time-maxTime > 60000) {
+			maxData -= (maxData-minData)/20;
+			maxTime = time;
+			localData.setItem('maxData', maxData);
 		}
 
 		var scaleNb = getCustomScale(curAvg);
@@ -216,8 +243,8 @@ function myLoop(time) {
 		debugDiv.innerHTML += '<br>dat: '+volData.length;
 		debugDiv.innerHTML += '<br>avg: '+curAvg;
 		// debugDiv.innerHTML += '<br>rgb: '+curGradient;
-		debugDiv.innerHTML += '<br>Min: '+minData;
-    debugDiv.innerHTML += '<br>Max: '+maxData;
+		debugDiv.innerHTML += '<br>Min: '+minData+' ('+Math.ceil(time-minTime)+')';
+    debugDiv.innerHTML += '<br>Max: '+maxData+' ('+Math.ceil(time-maxTime)+')';
 		debugDiv.innerHTML += '<br>T: '+Math.ceil(time);
 		debugDiv.innerHTML += '<br>Loc: '+localData.getItem('minData')+'/'+localData.getItem('maxData');
 
