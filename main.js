@@ -155,7 +155,7 @@ function scaleGradient(nb) {
 }
 
 scaleMin = 0;
-scaleMax = 50;
+scaleMax = 100;
 
 function getCustomScale(nb) {
 	return scaleMin+(((nb-minData)/(maxData-minData))*(scaleMax-scaleMin));
