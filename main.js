@@ -102,36 +102,6 @@ function gotStream(stream) {
     myLoop();
 }
 
-
-function dynamicGradient(nb) {
-
-	// Si on ne reçoit pas de donénes du micro, background noir
-	if (!isFinite(nb)) return 'rgb(0,0,0)';
-
-
-	var gradRange = (maxData - minData);
-	var gradMin = minData;
-	var gradMax = maxData;
-	var gradAvg = (gradMin+gradMax)/2;
-
-	if(nb <= gradMin) {
-		// Volume égal ou plus bas au minimum => vert
-		return 'rgb(0,200,0)';
-	}	else if(nb < gradAvg) {
-		// Volume entre le minimum et la moyenne => vert->orange
-		var redLvl = Math.ceil((255/(gradAvg-gradMin))*(nb-gradMin));
-		return 'rgb('+redLvl+',200,0)';
-	}
-	else if(nb < gradMax) {
-		// Volume entre la moyenne et le maximum => orange->rouge
-		var greenLvl = Math.ceil(200 - ((200/(gradMax-gradAvg))*((nb-gradMin) - (gradMax-gradAvg))));
-		return 'rgb(255,'+greenLvl+',0)';
-	}
-	// Volume plus grand ou égal au maximum => rouge
-	else return 'rgb(255,0,0)';
-
-}
-
 function scaleGradient(nb) {
 
 	var gradRange = scaleMax - scaleMin;
@@ -180,15 +150,6 @@ function addData(data, array) {
 	}
 
 }
-
-function getDisplayNb(nb) {
-
-    if(isNaN(nb) || nb < 0 || !isFinite(nb)) return 0;
-
-    return Math.round(nb);
-
-}
-
 
 
 // Calcule la moyenne de tous les éléments d'un tableau
