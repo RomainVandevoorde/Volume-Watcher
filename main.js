@@ -28,6 +28,8 @@ var WIDTH=500;
 var HEIGHT=50;
 var rafID = null;
 
+var starttime = null;
+
 window.onload = function() {
 
 	launchButton = document.getElementById('control').getElementsByTagName('button')[0];
@@ -100,57 +102,29 @@ function gotStream(stream) {
     myLoop();
 }
 
-function getGradient(nb) {
-
-	var step1 = 25; // Step 1: yellow
-	var step2 = 50; // Step 2: red
-	var inter = step2-step1;
-
-	if(nb < 0 ) {
-		return 'rgb(0,200,0)';
-	}
-	else if(nb < step1) {
-		// var redLvl = 6*nb;
-		var redLvl = Math.ceil((255/step1)*nb);
-		return 'rgb('+redLvl+',200,0)';
-
-	} else if (nb < step2) {
-		// yellow to red
-		// var greenLvl = 200 - 5*(nb-40);
-		var greenLvl = Math.ceil(200 - ((200/inter)*(nb - inter)));
-		return 'rgb(255,'+greenLvl+',0)';
-
-	} else if (!isFinite(nb)) {
-		// Si on ne reçoit pas de donénes du micro, background noir
-		return 'rgb(0,0,0)';
-
-	} else {
-		// red
-		return 'rgb(255,0,0)';
-	}
-}
 
 function dynamicGradient(nb) {
 
 	// Si on ne reçoit pas de donénes du micro, background noir
 	if (!isFinite(nb)) return 'rgb(0,0,0)';
 
+
 	var gradRange = (maxData - minData);
-	var gradMin = minData + (gradRange/10);
-	var gradMax = maxData - (gradRange/5);
+	var gradMin = minData;
+	var gradMax = maxData;
 	var gradAvg = (gradMin+gradMax)/2;
 
 	if(nb <= gradMin) {
 		// Volume égal ou plus bas au minimum => vert
 		return 'rgb(0,200,0)';
-	}	else if(nb < gravAvg) {
+	}	else if(nb < gradAvg) {
 		// Volume entre le minimum et la moyenne => vert->orange
-		var redLvl = Math.ceil((255/(gradAvg-gradMin))*nb);
+		var redLvl = Math.ceil((255/(gradAvg-gradMin))*(nb-gradMin));
 		return 'rgb('+redLvl+',200,0)';
 	}
 	else if(nb < gradMax) {
 		// Volume entre la moyenne et le maximum => orange->rouge
-		var greenLvl = Math.ceil(200 - ((200/(gradMax-gradAvg))*(nb - (gradMax-gradAvg))));
+		var greenLvl = Math.ceil(200 - ((200/(gradMax-gradAvg))*((nb-gradMin) - (gradMax-gradAvg))));
 		return 'rgb(255,'+greenLvl+',0)';
 	}
 	// Volume plus grand ou égal au maximum => rouge
@@ -158,36 +132,36 @@ function dynamicGradient(nb) {
 
 }
 
-/*function drawLoop( time ) {
+function scaleGradient(nb) {
 
-	var divDisplay = document.getElementById('dispRom');
-	var level = Math.log10(meter.volume)*20 + 40;
+	var gradRange = scaleMax - scaleMin;
+	var gradMin = scaleMin + (gradRange/10);
+	var gradMax = scaleMax;
+	var gradAvg = (gradMin+gradMax)/2;
 
-	divDisplay.innerHTML = time;
-	divDisplay.style.backgroundColor = getGradient(level);
+	if(nb <= gradMin) {
+		return 'rgb(0,200,0)';
+	} else if (nb < gradAvg) {
+		var redLvl = Math.ceil((255/(gradAvg-gradMin))*(nb-gradMin));
+		return 'rgb('+redLvl+',200,0)';
+	}
+	else if(nb < gradMax) {
+		// Volume entre la moyenne et le maximum => orange->rouge
+		var greenLvl = Math.ceil(200 - ((200/(gradMax-gradAvg))*((nb-gradMin) - (gradMax-gradAvg))));
+		return 'rgb(255,'+greenLvl+',0)';
+	}
+	else return 'rgb(255,0,0)';
 
+}
 
+scaleMin = 0;
+scaleMax = 50;
 
-    // clear the background
-    canvasContext.clearRect(0,0,WIDTH,HEIGHT);
-
-    // check if we're currently clipping
-    if (meter.checkClipping())
-        canvasContext.fillStyle = "red";
-    else
-        canvasContext.fillStyle = "green";
-
-    // draw a bar based on the current volume
-    canvasContext.fillRect(0, 0, meter.volume*WIDTH*1.4, HEIGHT);
-
-    // set up the next visual callback
-    rafID = window.requestAnimationFrame( drawLoop );
-}*/
+function getCustomScale(nb) {
+	return scaleMin+(((nb-minData)/(maxData-minData))*(scaleMax-scaleMin));
+}
 
 // Permet d'ajouter des données au tableau en enlevant les éléments les plus vieux et en validant la donnée
-// data: float
-// array: array
-// return array
 function addData(data, array) {
 
 	// Au chargement de la page, data vaudra -Infinity
@@ -195,7 +169,7 @@ function addData(data, array) {
 	if(!isFinite(data)) return array;
 
 	// Si il y a moins de 40 éléments, push simple
-	// Si il y a 40 élements, on enlève le premier avant d'ajouter notre nouvelle donnée
+	// Si il y a plus 40 élements, on enlève le premier avant d'ajouter notre nouvelle donnée
 	if(array.length < 60) {
 		array.push(data);
 		return array;
@@ -220,6 +194,9 @@ function getDisplayNb(nb) {
 // Calcule la moyenne de tous les éléments d'un tableau
 // return float
 function arrAvg(array) {
+
+	if(array.length === 0) return null;
+
 	var total = 0;
 	var nb = array.length;
 
@@ -232,8 +209,8 @@ function arrAvg(array) {
 then = 0; // Init variable de calcul du temps passsé entre deux frames
 volData = []; // Store volume data
 
-minData = 0;
-maxData = 0;
+minData = null;
+maxData = null;
 
 function myLoop(time) {
 
@@ -249,16 +226,28 @@ function myLoop(time) {
 
 		then = now - (elapsed%delay);
 
-		var level = Math.log10(meter.volume)*20 + 60;
+		var level = Math.log10(meter.volume)*20 + 80;
 
-		volData = addData(level, volData);
-		var curAvg = arrAvg(volData);
-		var curGradient = getGradient(curAvg);
+		if(isFinite(level)) {
+			
+		}
 
-		if(isFinite(level) && time > 5000) {
-            if (minData === 0 || level < minData) minData = level;
-            if (level > maxData) maxData = level;
-        }
+			volData = addData(level, volData);
+			var curAvg = arrAvg(volData);
+
+		// Pour éviter des bugs
+		if(curAvg !== null) {
+			if(curAvg < minData || minData === null) minData = curAvg;
+			if(curAvg > maxData || maxData === null) maxData = curAvg;
+		}
+
+		var scaleNb = getCustomScale(curAvg);
+		var curGradient = scaleGradient(scaleNb);
+
+		// if(isFinite(level) && time > 5000) {
+    //         if (minData === 0 || level < minData) minData = level;
+    //         if (level > maxData) maxData = level;
+    //     }
 
 		// Update debug info
 		debugDiv.innerHTML = 'lvl: '+Math.round(level);
@@ -267,11 +256,12 @@ function myLoop(time) {
 		debugDiv.innerHTML += '<br>rgb: '+curGradient;
 		debugDiv.innerHTML += '<br>Min: '+minData;
     debugDiv.innerHTML += '<br>Max: '+maxData;
+		// debugDiv.innerHTML += '<br>sca: '+displayNb;
 
 		// Change background color
 		document.getElementsByTagName('body')[0].style.backgroundColor = curGradient;
 		// Change displayed number
-		counter.innerHTML = getDisplayNb(curAvg);
+		counter.innerHTML = Math.ceil(scaleNb);
 
 
 	}
