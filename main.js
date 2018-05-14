@@ -135,7 +135,7 @@ function dynamicGradient(nb) {
 function scaleGradient(nb) {
 
 	var gradRange = scaleMax - scaleMin;
-	var gradMin = scaleMin + (gradRange/10);
+	var gradMin = scaleMin + (gradRange/5);
 	var gradMax = scaleMax;
 	var gradAvg = (gradMin+gradMax)/2;
 
@@ -209,8 +209,10 @@ function arrAvg(array) {
 then = 0; // Init variable de calcul du temps passsé entre deux frames
 volData = []; // Store volume data
 
-minData = null;
-maxData = null;
+localData = window.localStorage;
+
+minData = (localData.getItem('minData')) ? localData.getItem('minData') : null;
+maxData = (localData.getItem('maxData')) ? localData.getItem('maxData') : null;
 
 function myLoop(time) {
 
@@ -228,35 +230,32 @@ function myLoop(time) {
 
 		var level = Math.log10(meter.volume)*20 + 80;
 
-		if(isFinite(level)) {
-			
-		}
-
-			volData = addData(level, volData);
-			var curAvg = arrAvg(volData);
+		volData = addData(level, volData);
+		var curAvg = arrAvg(volData);
 
 		// Pour éviter des bugs
 		if(curAvg !== null) {
-			if(curAvg < minData || minData === null) minData = curAvg;
-			if(curAvg > maxData || maxData === null) maxData = curAvg;
+			if(curAvg < minData || minData === null) {
+				minData = curAvg;
+				localData.setItem('minData', curAvg);
+			}
+			if(curAvg > maxData || maxData === null) {
+				maxData = curAvg;
+				localData.setItem('maxData', curAvg);
+			}
 		}
 
 		var scaleNb = getCustomScale(curAvg);
 		var curGradient = scaleGradient(scaleNb);
 
-		// if(isFinite(level) && time > 5000) {
-    //         if (minData === 0 || level < minData) minData = level;
-    //         if (level > maxData) maxData = level;
-    //     }
-
 		// Update debug info
 		debugDiv.innerHTML = 'lvl: '+Math.round(level);
 		debugDiv.innerHTML += '<br>dat: '+volData.length;
 		debugDiv.innerHTML += '<br>avg: '+curAvg;
-		debugDiv.innerHTML += '<br>rgb: '+curGradient;
+		// debugDiv.innerHTML += '<br>rgb: '+curGradient;
 		debugDiv.innerHTML += '<br>Min: '+minData;
     debugDiv.innerHTML += '<br>Max: '+maxData;
-		// debugDiv.innerHTML += '<br>sca: '+displayNb;
+		debugDiv.innerHTML += '<br>Loc: '+localData.getItem('minData')+'/'+localData.getItem('maxData');
 
 		// Change background color
 		document.getElementsByTagName('body')[0].style.backgroundColor = curGradient;
