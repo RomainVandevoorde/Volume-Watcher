@@ -128,7 +128,9 @@ scaleMin = 0;
 scaleMax = 100;
 
 function getCustomScale(nb) {
-	return scaleMin+(((nb-minData)/(maxData-minData))*(scaleMax-scaleMin));
+	var dataRange = maxData - minData;
+	if(nb < (minData + (dataRange/10))) return 0;
+	return scaleMin+(((nb-minData-(dataRange/10))/(dataRange*0.9))*(scaleMax-scaleMin));
 }
 
 // Permet d'ajouter des données au tableau en enlevant les éléments les plus vieux et en validant la donnée
@@ -140,7 +142,7 @@ function addData(data, array) {
 
 	// Si il y a moins de 40 éléments, push simple
 	// Si il y a plus 40 élements, on enlève le premier avant d'ajouter notre nouvelle donnée
-	if(array.length < 60) {
+	if(array.length < 80) {
 		array.push(data);
 		return array;
 	} else {
@@ -216,6 +218,7 @@ function myLoop(time) {
 		// debugDiv.innerHTML += '<br>rgb: '+curGradient;
 		debugDiv.innerHTML += '<br>Min: '+minData;
     debugDiv.innerHTML += '<br>Max: '+maxData;
+		debugDiv.innerHTML += '<br>T: '+Math.ceil(time);
 		debugDiv.innerHTML += '<br>Loc: '+localData.getItem('minData')+'/'+localData.getItem('maxData');
 
 		// Change background color
