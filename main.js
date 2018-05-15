@@ -36,6 +36,9 @@ window.onload = function() {
 	mainDisplay = document.getElementById('display');
 	counter = mainDisplay.getElementsByTagName('h2')[0];
 	debugDiv = document.getElementById('debug');
+	optionsButton = document.getElementById('menu').getElementsByTagName('a')[0];
+	settingsBlock = document.getElementById('settings');
+	resetLocalStorageButton = document.getElementById('resetLocalStorage');
 
 	// Nécessaire pour Google Chrome
     launchButton.addEventListener('click', function(){
@@ -43,6 +46,16 @@ window.onload = function() {
         launchButton.style.display = 'none';
         mainDisplay.style.display = 'block';
     });
+
+		optionsButton.addEventListener('click', function(){
+			if(settingsBlock.style.display == 'block') settingsBlock.style.display = 'none';
+			else settingsBlock.style.display = 'block';
+		});
+
+		resetLocalStorageButton.addEventListener('click', function(){
+			window.localStorage.removeItem('minData');
+			window.localStorage.removeItem('maxData');
+		});
 
     // grab our canvas
     // canvasContext = document.getElementById( "meter" ).getContext("2d");
@@ -225,11 +238,15 @@ function myLoop(time) {
 			}
 		}
 
-		if (time-minTime > 120000) {
+		var timeSinceMinUpdate = time-minTime;
+		var timeSinceMaxUpdate = time-maxTime;
+
+		if (timeSinceMinUpdate > 120000) {
 			minData += (maxData-minData)/50;
 			minTime = time;
+			localData.setItem('minData', minData);
 		}
-		if (time-maxTime > 60000) {
+		if (timeSinceMaxUpdate > 60000) {
 			maxData -= (maxData-minData)/20;
 			maxTime = time;
 			localData.setItem('maxData', maxData);
@@ -240,12 +257,12 @@ function myLoop(time) {
 
 		// Update debug info
 		debugDiv.innerHTML = 'lvl: '+Math.round(level);
-		debugDiv.innerHTML += '<br>dat: '+volData.length;
+		// debugDiv.innerHTML += '<br>dat: '+volData.length;
 		debugDiv.innerHTML += '<br>avg: '+curAvg;
 		// debugDiv.innerHTML += '<br>rgb: '+curGradient;
-		debugDiv.innerHTML += '<br>Min: '+minData+' ('+Math.ceil(time-minTime)+')';
-    debugDiv.innerHTML += '<br>Max: '+maxData+' ('+Math.ceil(time-maxTime)+')';
-		debugDiv.innerHTML += '<br>T: '+Math.ceil(time);
+		debugDiv.innerHTML += '<br>Min: '+minData+' ('+Math.ceil(timeSinceMinUpdate/1000)+')';
+    debugDiv.innerHTML += '<br>Max: '+maxData+' ('+Math.ceil(timeSinceMaxUpdate/1000)+')';
+		// debugDiv.innerHTML += '<br>T: '+Math.ceil(time);
 		debugDiv.innerHTML += '<br>Loc: '+localData.getItem('minData')+'/'+localData.getItem('maxData');
 
 		// Change background color
