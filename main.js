@@ -154,7 +154,7 @@ function addData(data, array) {
 	if(!isFinite(data)) return array;
 
 	// Permet de conserver un nombre limité de données
-	if(array.length < 80) {
+	if(array.length < 100) {
 		array.push(data);
 		return array;
 	} else {
@@ -241,12 +241,12 @@ function myLoop(time) {
 		var timeSinceMinUpdate = time-minTime;
 		var timeSinceMaxUpdate = time-maxTime;
 
-		if (timeSinceMinUpdate > 120000) {
+		if (timeSinceMinUpdate > 300000) {
 			minData += (maxData-minData)/50;
 			minTime = time;
 			localData.setItem('minData', minData);
 		}
-		if (timeSinceMaxUpdate > 60000) {
+		if (timeSinceMaxUpdate > 300000) {
 			maxData -= (maxData-minData)/20;
 			maxTime = time;
 			localData.setItem('maxData', maxData);
@@ -268,7 +268,7 @@ function myLoop(time) {
 		// Change background color
 		document.getElementsByTagName('body')[0].style.backgroundColor = curGradient;
 		// Change displayed number
-		counter.innerHTML = Math.ceil(scaleNb);
+		counter.innerHTML = Math.round(scaleNb/10);
 
 
 	}
