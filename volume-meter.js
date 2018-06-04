@@ -71,12 +71,12 @@ function createAudioMeter(audioContext,clipLevel,averaging,clipLag) {
 }
 
 function volumeAudioProcess( event ) {
-	var buf = event.inputBuffer.getChannelData(0);
+		var buf = event.inputBuffer.getChannelData(0);
     var bufLength = buf.length;
-	var sum = 0;
+		var sum = 0;
     var x;
 
-	// Do a root-mean-square on the samples: sum up the squares...
+		// Do a root-mean-square on the samples: sum up the squares...
     for (var i=0; i<bufLength; i++) {
     	x = buf[i];
     	if (Math.abs(x)>=this.clipLevel) {

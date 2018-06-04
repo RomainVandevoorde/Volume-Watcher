@@ -28,23 +28,36 @@ var WIDTH=500;
 var HEIGHT=50;
 var rafID = null;
 
-var starttime = null;
+var startTime = null;
 
 window.onload = function() {
 
+	// Bouton de lancement
 	launchButton = document.getElementById('control').getElementsByTagName('button')[0];
+	// Bloc d'affichage central
 	mainDisplay = document.getElementById('display');
+	// Element de texte central
 	counter = mainDisplay.getElementsByTagName('h2')[0];
+	// Bloc de debug (en bas à gauche)
 	debugDiv = document.getElementById('debug');
+	// Lien pour afficher/cacher le menu d'options
 	optionsButton = document.getElementById('menu').getElementsByTagName('a')[0];
+	// Bloc menu d'options
 	settingsBlock = document.getElementById('settings');
+	// Bouton pour reset le localStorage
 	resetLocalStorageButton = document.getElementById('resetLocalStorage');
+
+	fixedMinCheck = document.getElementById('fixedMin');
+	fixedMaxCheck = document.getElementById('fixedMax');
+	fixedMinVal = document.getElementById('fixedMinVal');
+	fixedMaxVal = document.getElementById('fixedMaxVal');
 
 	// Nécessaire pour Google Chrome
     launchButton.addEventListener('click', function(){
-        audioContext.resume();
-        launchButton.style.display = 'none';
-        mainDisplay.style.display = 'block';
+        audioContext.resume().then(function(){
+					launchButton.style.display = 'none';
+	        mainDisplay.style.display = 'block';
+				});
     });
 
 		optionsButton.addEventListener('click', function(){
@@ -104,6 +117,7 @@ function didntGetStream() {
 var mediaStreamSource = null;
 
 function gotStream(stream) {
+		console.log('gotStream');
     // Create an AudioNode from the stream.
     mediaStreamSource = audioContext.createMediaStreamSource(stream);
 
@@ -118,7 +132,7 @@ function gotStream(stream) {
 function scaleGradient(nb) {
 
 	var gradRange = scaleMax - scaleMin;
-	var gradMin = scaleMin + (gradRange/5);
+	var gradMin = scaleMin;
 	var gradMax = scaleMax;
 	var gradAvg = (gradMin+gradMax)/2;
 
@@ -141,7 +155,12 @@ scaleMin = 0;
 scaleMax = 100;
 
 function getCustomScale(nb) {
-	return scaleMin+(((nb-minData)/(maxData-minData))*(scaleMax-scaleMin));
+	var min = fixedMinCheck.checked ? fixedMinVal.value : minData;
+	var max = fixedMaxCheck.checked ? fixedMaxVal.value : maxData;
+	var result = scaleMin+(((nb-min)/(max-min))*(scaleMax-scaleMin));
+	if (result < 0) return 0;
+	else if(result > 100) return 100;
+	else return result;
 }
 
 // Permet d'ajouter des données au tableau en enlevant les éléments les plus vieux et en validant la donnée
@@ -152,7 +171,7 @@ function addData(data, array) {
 	if(!isFinite(data)) return array;
 
 	// Permet de conserver un nombre limité de données
-	if(array.length < 80) {
+	if(array.length < 200) {
 		array.push(data);
 		return array;
 	} else {
@@ -179,18 +198,6 @@ function arrAvg(array) {
 	return total/nb;
 }
 
-function setMin(val, time) {
-	minData = val;
-	localData.setItem('minData', val);
-	minTime = time;
-}
-
-function setMax(val, time) {
-	maxData = val;
-	localData.setItem('maxData', val);
-	maxTime = time;
-}
-
 
 then = 0; // Init variable de calcul du temps passsé entre deux frames
 volData = []; // Store volume data
@@ -203,10 +210,15 @@ maxData = (localData.getItem('maxData')) ? parseFloat(localData.getItem('maxData
 minTime = 0;
 maxTime = 0;
 
+
+
 function myLoop(time) {
 
 	var delay = 50; // Délai entre deux calculs
 	var avTime = 2000;
+	if(startTime === null && launchButton.style.display === 'none') {
+		startTime = time;
+	}
 
 	requestAnimationFrame(myLoop);
 
@@ -236,14 +248,14 @@ function myLoop(time) {
 			}
 		}
 
-		var timeSinceMinUpdate = time-minTime;
+		// var timeSinceMinUpdate = time-minTime;
 		var timeSinceMaxUpdate = time-maxTime;
 
-		if (timeSinceMinUpdate > 300000) {
-			minData += (maxData-minData)/20;
-			minTime = time;
-			localData.setItem('minData', minData);
-		}
+		// if (timeSinceMinUpdate > 300000) {
+		// 	minData += (maxData-minData)/20;
+		// 	minTime = time;
+		// 	localData.setItem('minData', minData);
+		// }
 		if (timeSinceMaxUpdate > 300000) {
 			maxData -= (maxData-minData)/20;
 			maxTime = time;
@@ -257,8 +269,9 @@ function myLoop(time) {
 		debugDiv.innerHTML = 'lvl: '+Math.round(level);
 		// debugDiv.innerHTML += '<br>dat: '+volData.length;
 		debugDiv.innerHTML += '<br>avg: '+curAvg;
+		debugDiv.innerHTML += '<br>sca: '+scaleNb;
 		// debugDiv.innerHTML += '<br>rgb: '+curGradient;
-		debugDiv.innerHTML += '<br>Min: '+minData+' ('+Math.ceil(timeSinceMinUpdate/1000)+')';
+		debugDiv.innerHTML += '<br>Min: '+minData;
     debugDiv.innerHTML += '<br>Max: '+maxData+' ('+Math.ceil(timeSinceMaxUpdate/1000)+')';
 		// debugDiv.innerHTML += '<br>T: '+Math.ceil(time);
 		debugDiv.innerHTML += '<br>Loc: '+localData.getItem('minData')+'/'+localData.getItem('maxData');
@@ -266,7 +279,7 @@ function myLoop(time) {
 		// Change background color
 		document.getElementsByTagName('body')[0].style.backgroundColor = curGradient;
 		// Change displayed number
-		counter.innerHTML = Math.round(scaleNb/10);
+		counter.innerHTML = Math.round(scaleNb);
 
 
 	}
